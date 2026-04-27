@@ -112,7 +112,7 @@ static avm_codec_err_t decoder_init(avm_codec_ctx_t *ctx) {
 
     priv->selected_ops_id = -1;
     priv->selected_op_index = -1;
-    priv->random_access_point_index = -1;
+    priv->random_access_point_index = 0;
     priv->enable_sub_bitstream_extraction = 0;
     priv->num_local_ops_selections = 0;
 
@@ -483,7 +483,7 @@ static avm_codec_err_t init_decoder(avm_codec_alg_priv_t *ctx) {
   worker->hook = frame_worker_hook;
   frame_worker_data->pbi->olk_encountered = 0;
   frame_worker_data->pbi->random_accessed = false;
-  frame_worker_data->pbi->random_access_point_index = -1;
+  frame_worker_data->pbi->random_access_point_index = 0;
   frame_worker_data->pbi->random_access_point_count = 0;
   frame_worker_data->pbi->is_multistream = 0;
   frame_worker_data->pbi->multistream_decoder_mode = 0;
@@ -1015,6 +1015,10 @@ static avm_codec_err_t decoder_decode(avm_codec_alg_priv_t *ctx,
                                     [OBU_CLOSED_LOOP_KEY] ||
         pbi->obus_in_frame_unit_data[tlayer_id][mlayer_id][OBU_OPEN_LOOP_KEY] ||
         pbi->obus_in_frame_unit_data[tlayer_id][mlayer_id][OBU_RAS_FRAME];
+    const bool has_nonclk_key_obu =
+        has_key_obu && !pbi->obus_in_frame_unit_data[tlayer_id][mlayer_id]
+                                                    [OBU_CLOSED_LOOP_KEY];
+
     pbi->current_mlayer_id = mlayer_id;
     pbi->current_tlayer_id = tlayer_id;
 
@@ -1043,14 +1047,15 @@ static avm_codec_err_t decoder_decode(avm_codec_alg_priv_t *ctx,
     // persists from the key OBU into subsequent frame units.
     if (has_key_obu && !ra_counted_in_tu) {
       ra_counted_in_tu = true;
-      if (pbi->random_access_point_count == pbi->random_access_point_index) {
+      if (has_nonclk_key_obu &&
+          pbi->random_access_point_count == pbi->random_access_point_index) {
         pbi->random_accessed = true;
       }
       pbi->random_access_point_count++;
     }
 
     // Skip all frame units before the target random access point
-    if (pbi->random_access_point_index >= 0 &&
+    if (pbi->random_access_point_index > 0 &&
         pbi->random_access_point_count <= pbi->random_access_point_index) {
       data_start += frame_unit_size;
       continue;
