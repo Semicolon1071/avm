@@ -3378,7 +3378,7 @@ static avm_codec_err_t encoder_encode(avm_codec_alg_priv_t *ctx,
           &dst_end_time_stamp_la, !img, timestamp_ratio);
       if (status != -1) {
         if (status != AVM_CODEC_OK) {
-          avm_internal_error(&cpi_lap->common.error, AVM_CODEC_ERROR, NULL);
+          avm_internal_error(&cpi_lap->common.error, status, NULL);
         }
         cpi_lap->seq_params_locked = 1;
       }
@@ -3412,7 +3412,7 @@ static avm_codec_err_t encoder_encode(avm_codec_alg_priv_t *ctx,
       cx_time += avm_usec_timer_elapsed(&timer);
       if (status == -1) break;
       if (status != AVM_CODEC_OK) {
-        avm_internal_error(&cpi->common.error, AVM_CODEC_ERROR, NULL);
+        avm_internal_error(&cpi->common.error, status, NULL);
       }
 
       const int mlayer_id = cpi->common.mlayer_id;
