@@ -514,14 +514,6 @@ avm_codec_err_t av2_copy_reference_dec(AV2Decoder *pbi, int idx,
   return cm->error.error_code;
 }
 
-static int equal_dimensions_and_border(const YV12_BUFFER_CONFIG *a,
-                                       const YV12_BUFFER_CONFIG *b) {
-  return a->y_height == b->y_height && a->y_width == b->y_width &&
-         a->uv_height == b->uv_height && a->uv_width == b->uv_width &&
-         a->y_stride == b->y_stride && a->uv_stride == b->uv_stride &&
-         a->border == b->border;
-}
-
 avm_codec_err_t av2_set_reference_dec(AV2_COMMON *cm, int idx,
                                       int use_external_ref,
                                       YV12_BUFFER_CONFIG *sd) {
@@ -545,7 +537,7 @@ avm_codec_err_t av2_set_reference_dec(AV2_COMMON *cm, int idx,
       avm_yv12_copy_frame(sd, ref_buf, num_planes);
     }
   } else {
-    if (!equal_dimensions_and_border(ref_buf, sd)) {
+    if (!avm_equal_dimensions_and_border(ref_buf, sd)) {
       avm_internal_error(&cm->error, AVM_CODEC_ERROR,
                          "Incorrect buffer dimensions");
     } else {
@@ -570,7 +562,7 @@ avm_codec_err_t av2_copy_new_frame_dec(AV2_COMMON *cm,
                                        YV12_BUFFER_CONFIG *sd) {
   const int num_planes = av2_num_planes(cm);
 
-  if (!equal_dimensions_and_border(new_frame, sd))
+  if (!avm_equal_dimensions_and_border(new_frame, sd))
     avm_internal_error(&cm->error, AVM_CODEC_ERROR,
                        "Incorrect buffer dimensions");
   else
